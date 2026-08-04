@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_ORIGINAL_BYTES = 20 * 1024 * 1024;
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 5;
 
 type GasFile = {
   driveFileId: string;

@@ -6,7 +6,7 @@ import { CalendarIcon, ExternalLinkIcon, MapIcon, PinIcon } from "@/components/i
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { TravelHero } from "@/components/travel-hero";
 import { getPlaceById, listPlacePhotos, type TravelPlaceRow, type TravelPhotoRow } from "@/lib/travel/repository";
-import { drivePreviewUrl } from "@/lib/travel/image-url";
+import { coverPreviewUrl, drivePreviewUrl } from "@/lib/travel/image-url";
 
 export default function PlaceDetailPage() {
   const params = useParams<{ id: string }>();
@@ -50,7 +50,7 @@ export default function PlaceDetailPage() {
   const embedUrl = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
   const coverPreview = orderedPhotos[0]
     ? drivePreviewUrl(orderedPhotos[0].drive_file_id, orderedPhotos[0].thumbnail_url || orderedPhotos[0].drive_url)
-    : place.cover_image_url || "/places/forest.svg";
+    : coverPreviewUrl(place.cover_image_url, 1280);
 
   function openPhoto(index: number) {
     setLightboxIndex(index);
@@ -62,7 +62,7 @@ export default function PlaceDetailPage() {
       <TravelHero title={place.name} subtitle={`${place.category} · ${place.province || "ไม่ระบุจังหวัด"}`} backHref="/places" editable editHref="/places/new" />
       <section className="detail-content">
         <button className="hero-image-button" type="button" onClick={() => orderedPhotos.length && openPhoto(0)}>
-          <img src={coverPreview} alt={place.name} />
+          <img fetchPriority="high" decoding="async" src={coverPreview} alt={place.name} />
           <span>{orderedPhotos.length ? "กดดูรูปต้นฉบับ" : "ยังไม่มีรูปภาพ"}</span>
         </button>
 
@@ -70,7 +70,7 @@ export default function PlaceDetailPage() {
           <div className="mini-gallery">
             {orderedPhotos.slice(0, 5).map((photo, index) => (
               <button key={photo.id} type="button" onClick={() => openPhoto(index)} aria-label={`เปิดรูปที่ ${index + 1}`}>
-                <img src={drivePreviewUrl(photo.drive_file_id, photo.thumbnail_url || photo.drive_url, 640)} alt={`${place.name} รูปที่ ${index + 1}`} />
+                <img loading="lazy" decoding="async" src={drivePreviewUrl(photo.drive_file_id, photo.thumbnail_url || photo.drive_url, 640)} alt={`${place.name} รูปที่ ${index + 1}`} />
                 {index === 4 && orderedPhotos.length > 5 && <span className="gallery-more-count">+{orderedPhotos.length - 5}</span>}
               </button>
             ))}
@@ -99,7 +99,7 @@ export default function PlaceDetailPage() {
         </section>
       </section>
 
-      <PhotoLightbox photos={orderedPhotos} placeName={place.name} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
+      <PhotoLightbox key={`${lightboxOpen}-${lightboxIndex}`} photos={orderedPhotos} placeName={place.name} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
     </main>
   );
 }

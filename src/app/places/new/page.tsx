@@ -6,6 +6,7 @@ import { TravelHero } from "@/components/travel-hero";
 import { LocationPicker, LocationValue } from "@/components/location-picker";
 import { PhotoItem, PhotoPicker } from "@/components/photo-picker";
 import { CheckIcon } from "@/components/icons";
+import { RatingSlider } from "@/components/rating-slider";
 import { savePlace } from "@/lib/travel/repository";
 import { uploadTravelPhotos } from "@/lib/travel/uploads";
 
@@ -34,7 +35,10 @@ export default function NewPlacePage(){
     setSaving(true); setMessage("กำลังบันทึกข้อมูล…");
     try {
       const ordered = [...photos].sort((a,b)=>a.id===coverId?-1:b.id===coverId?1:0);
-      const uploaded = await uploadTravelPhotos(ordered.map(p=>p.file), crypto.randomUUID());
+      const uploaded = await uploadTravelPhotos(ordered.map(p=>p.file), crypto.randomUUID(), (done,total)=>{
+        const percent=Math.round((done/total)*100);
+        setMessage(`กำลังเตรียมและอัปโหลดรูป ${percent}%`);
+      });
       const result = await savePlace({
         name:name.trim(), category, visitDate:date, rating, note:note.trim(), ...location,
         photos:uploaded, coverIndex:0,
@@ -61,13 +65,13 @@ export default function NewPlacePage(){
           <label className="full">ชื่อสถานที่ *<input value={name} onChange={e=>setName(e.target.value)} placeholder="เช่น น้ำตกเอราวัณ"/></label>
           <label>หมวด<select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(c=><option key={c}>{c}</option>)}</select></label>
           <label>วันที่เดินทาง<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label>
-          <div className="full rating-field"><span>ความประทับใจ</span><div>{[1,2,3,4,5].map(star=><button type="button" className={star<=rating?"active":""} key={star} onClick={()=>setRating(star)}>★</button>)}</div></div>
+          <div className="full rating-field"><span>ความประทับใจ <strong>{rating.toFixed(1)}</strong></span><RatingSlider value={rating} onChange={setRating}/></div>
           <label className="full">บันทึกสั้น ๆ<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="ความประทับใจ สิ่งที่ควรรู้ หรือสิ่งที่อยากจำ"/></label>
         </div>
       </section>
       <section className="form-card">
         <div className="form-section-heading"><div><span className="form-step">3</span><h2>ตำแหน่งสถานที่</h2></div></div>
-        <p className="field-hint">แตะแผนที่ เลื่อนหา ใช้ GPS หรือกรอกพิกัด ระบบจะเติมพื้นที่ให้อัตโนมัติ</p>
+        <p className="field-hint">พิมพ์ชื่อสถานที่ ตำบล อำเภอ หรือจังหวัด แล้วเลือกจากหลายผลลัพธ์ ระบบจะเติมพิกัดและพื้นที่ให้อัตโนมัติ</p>
         <LocationPicker value={location} onChange={setLocation} onSelectName={(selected)=>{ if(!name.trim()) setName(selected); }}/>
       </section>
       <div className="sticky-submit"><button type="submit" disabled={saving}><CheckIcon/>{saving?"กำลังบันทึก…":"บันทึกและกลับหน้าแรก"}</button></div>

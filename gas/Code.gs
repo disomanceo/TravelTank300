@@ -25,6 +25,11 @@ function doPost(e) {
       return jsonResponse_({ success: true, files: uploadBatchLegacy_(payload) });
     }
 
+    if (action === 'getImage') {
+      var imagePayload = JSON.parse(String(e.parameter.data || '{}'));
+      return jsonResponse_(getImage_(imagePayload.fileId));
+    }
+
     if (action === 'delete') {
       var deletePayload = JSON.parse(String(e.parameter.data || '{}'));
       return jsonResponse_({ success: true, deleted: deleteImage_(deletePayload.fileId) });
@@ -92,6 +97,20 @@ function directImageUrl_(fileId) {
 
 function thumbnailUrl_(fileId, width) {
   return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w' + String(width || 1600);
+}
+
+function getImage_(fileId) {
+  if (!fileId) throw new Error('Missing fileId');
+  var file = DriveApp.getFileById(fileId);
+  var blob = file.getBlob();
+  var bytes = blob.getBytes();
+  if (bytes.length > 15 * 1024 * 1024) throw new Error('Image exceeds 15 MB');
+  return {
+    success: true,
+    fileName: file.getName(),
+    mimeType: blob.getContentType() || file.getMimeType(),
+    base64: Utilities.base64Encode(bytes)
+  };
 }
 
 function deleteImage_(fileId) {

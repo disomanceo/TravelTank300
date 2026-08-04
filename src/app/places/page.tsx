@@ -6,6 +6,7 @@ import { TravelHero } from "@/components/travel-hero";
 import { BottomNav } from "@/components/bottom-nav";
 import { ChevronRightIcon, FilterIcon, PinIcon, PlusIcon, SearchIcon } from "@/components/icons";
 import { listPlaces, type TravelPlaceRow } from "@/lib/travel/repository";
+import { coverPreviewUrl } from "@/lib/travel/image-url";
 
 function getLocationLabel(place: TravelPlaceRow) {
   return [place.subdistrict, place.district, place.province].filter(Boolean).join(" · ") || place.location_name || "ยังไม่ระบุพื้นที่";
@@ -77,7 +78,7 @@ export default function PlacesPage() {
         {!loading && !error && <div className="place-list compact-list">
           {filtered.map((place) => (
             <Link className="place-row" href={`/places/${place.id}`} key={place.id}>
-              <img className="place-thumb" src={place.cover_image_url || "/places/forest.svg"} alt={place.name} />
+              <img className="place-thumb" loading="lazy" decoding="async" src={coverPreviewUrl(place.cover_image_url, 480)} alt={place.name} />
               <div className="place-row-info">
                 <div className="place-row-title"><h2>{place.name}</h2><span className="status-chip visited">บันทึกแล้ว</span></div>
                 <p className="place-category">{place.category} · {place.province || "ไม่ระบุจังหวัด"}</p>
