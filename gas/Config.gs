@@ -1,0 +1,4 @@
+const TRAVEL_CONFIG = Object.freeze({
+  ROOT_FOLDER_ID: '1zvILgUU52pUlh2uNIgBas-DiVjx5x3JY',
+  TOKEN_PROPERTY: 'TRAVEL_UPLOAD_TOKEN',
+});
