@@ -1,78 +1,104 @@
-# TravelTank300 TODO — Step 14
+# TravelTank300 TODO — Step 21 Clean Root
 
-## เสร็จแล้ว
-- [x] ลดความสูง Hero ทุกหน้าให้เหลือประมาณ 2–3 แถว
-- [x] แยกช่องค้นหาตำแหน่งเป็นอีกหนึ่งบรรทัด
-- [x] รองรับ Google Maps JavaScript API, Places search และหมุดลากได้
-- [x] แสดงผลค้นหาสถานที่หลายรายการ
-- [x] เติมตำบล อำเภอ จังหวัด ละติจูด และลองจิจูดอัตโนมัติ
-- [x] รองรับคะแนนครั้งละ 0.5 ดาว
-- [x] แก้ Lightbox ให้ใช้ URL ภาพความละเอียดสูงที่แสดงใน `<img>` ได้
-- [x] ลด Preview เป็น 1280px / JPEG 0.72 เพื่อโหลดและอัปโหลดเร็วขึ้น
-- [x] เพิ่ม Batch ฝั่ง API เป็น 5 คู่รูปต่อคำขอ GAS
+อัปเดต: 5 สิงหาคม 2569
+ฐานอ้างอิงเดิม: Commit `2e1a31d`
 
-## ต้องตั้งค่า
-- [ ] เพิ่ม `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ใน `.env.local` และ Vercel
-- [ ] เปิด Google Maps JavaScript API และ Places API สำหรับ API Key
+## สิ่งที่แก้ใน Step 21
 
-## ทดสอบก่อน Commit
+- [x] จัด ZIP แบบไฟล์อยู่ระดับราก ไม่มีโฟลเดอร์ `TravelTank300` ซ้อน
+- [x] เพิ่มคำสั่งลบ `D:\TravelTank300\TravelTank300` ในคู่มือติดตั้ง
+- [x] บังคับ `next dev --webpack`
+- [x] บังคับ `next build --webpack`
+- [x] แก้ `react-hooks/set-state-in-effect` ในหน้ารายละเอียดสถานที่
+- [x] แก้ dependency warning ของ Effect โหลดรายละเอียดสถานที่
+- [x] แก้ `react-hooks/set-state-in-effect` ในระบบค้นหาสถานที่
+- [x] ย้ายการล้างผลค้นหาไปทำใน event handler แทน Effect
+- [x] จัดรูปแบบโค้ดหน้ารายละเอียดและ LocationPicker ให้อ่านและแก้ไขต่อได้
+- [x] คง Image Proxy/Drive fallback และใช้ `<img>` เฉพาะจุดที่จำเป็น
+
+## ฟีเจอร์ที่มีในชุดนี้
+
+- [x] เพิ่มสถานที่ท่องเที่ยว
+- [x] แก้ไขข้อมูลสถานที่
+- [x] เพิ่มรูปในสถานที่เดิม
+- [x] ตั้งรูปหน้าปก
+- [x] ลบรูป
+- [x] ลบสถานที่
+- [x] คะแนน 5 ดาวแบบครั้งละ 0.5
+- [x] ค้นหาสถานที่อัตโนมัติแบบ debounce
+- [x] แสดงหลายผลลัพธ์เมื่อชื่อซ้ำ
+- [x] ใช้ Leaflet/OpenStreetMap และ API geocoding เดิม
+- [x] อัปโหลดรูปเป็นชุด
+
+## ผลตรวจในสภาพแวดล้อมสร้างไฟล์
+
+- [ ] `npm run lint` — ยังรันไม่ได้ใน container เพราะ registry ภายในไม่มี `@supabase/supabase-js`
+- [ ] `npm run build` — ต้องรันบนเครื่องผู้ใช้หลัง `npm.cmd install`
+- [x] ตรวจโครง ZIP แล้ว: ไฟล์ `package.json`, `src`, `public`, `gas`, `TODO.md` อยู่ระดับราก
+- [x] ตรวจ `package.json`: dev/build ใช้ Webpack
+
+## ต้องทดสอบบนเครื่อง
+
+```powershell
+cd D:\TravelTank300
+npm.cmd install
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run dev
+```
+
+ผลที่ต้องการ:
+
+- `lint` ไม่มี error `react-hooks/set-state-in-effect`
+- `lint` ไม่ตรวจโฟลเดอร์ `D:\TravelTank300\TravelTank300`
+- `build` แสดง `next build --webpack`
+- `dev` แสดง `next dev --webpack`
+- หน้า `/places/[id]` เปิดได้
+- ปุ่มแก้ไข เพิ่มรูป ตั้งหน้าปก ลบรูป และลบสถานที่ทำงาน
+- ค้นหาสถานที่เริ่มหลังพิมพ์อย่างน้อย 2 ตัวอักษร
+
+## GAS
+
+- [ ] นำ `gas/Code.gs` ไปอัปเดตใน Apps Script
+- [ ] Deploy เป็น New version
+- [ ] ตรวจ Script Properties: `UPLOAD_TOKEN`, `ROOT_FOLDER_ID`
+
+## ก่อน Commit
+
+- [ ] `npm.cmd run lint` ผ่าน
+- [ ] `npm.cmd run build` ผ่าน
+- [ ] ทดสอบบนมือถือ
+- [ ] ตรวจรูปเก่าและ Lightbox
+- [ ] ตรวจอัปโหลด 5–10 รูป
+
+ยังไม่ Commit และยังไม่ Push จนกว่า lint/build บนเครื่องจะผ่าน
+
+## Step 22 — Build compatibility fix (2026-08-05)
+
+ฐานทดสอบจากเครื่องผู้ใช้: Step 21 / package version 0.2.2
+
+### แก้แล้ว
+- [x] คืน `savePlan()` ให้ `repository.ts` เพื่อรองรับหน้า `plans/new`
+- [x] คืน `TravelPlanRow` และ `listPlans()` เพื่อรักษาความเข้ากันได้กับโมดูลแผนการเดินทางเดิม
+- [x] ขยาย props ของ `TravelHero` ให้รองรับ `compact` และ `editable`
+- [x] ระบุชนิด `PreparedPhoto[][]`, payload และผลอัปโหลดใน `uploads.ts`
+- [x] รักษาคำสั่ง `next build --webpack` และ `next dev --webpack`
+- [x] ZIP อยู่ระดับราก ไม่มีโฟลเดอร์โปรเจกต์ซ้อน
+
+### ผลจากเครื่องผู้ใช้ก่อนแก้
+- [x] `npm.cmd run lint`: ผ่าน 0 errors, 3 warnings
+- [ ] `npm.cmd run build`: ไม่ผ่าน TypeScript เนื่องจาก `savePlan`, props ของ `TravelHero` และ implicit any ใน `uploads.ts`
+
+### ต้องทดสอบหลังติดตั้ง Step 22
 - [ ] `npm.cmd run lint`
 - [ ] `npm.cmd run build`
-- [ ] ค้นหาชื่อสถานที่/จังหวัดแล้วเห็นหลายตัวเลือก
-- [ ] เลือกผลลัพธ์แล้วหมุดย้ายและข้อมูลพื้นที่เติมอัตโนมัติ
-- [ ] ลากหมุดแล้วพิกัดเปลี่ยน
-- [ ] เลือกคะแนน 4.5 ดาว
-- [ ] กดรูปในหน้ารายละเอียดแล้ว Lightbox แสดงและปัดได้
-- [ ] ทดสอบอัปโหลด 5–10 รูปและจับเวลา
+- [ ] `npm.cmd run dev`
+- [ ] เปิด `/plans`
+- [ ] เปิด `/plans/new`
+- [ ] เปิด `/places`
+- [ ] เปิดรายละเอียดสถานที่และหน้าแก้ไข
 
-## งานถัดไป
-- [ ] สร้าง Thumbnail แยก 320px ใน Google Drive
-- [ ] Background upload/retry สำหรับอินเทอร์เน็ตไม่เสถียร
-- [ ] หน้าแก้ไขสถานที่และเปลี่ยนรูปหน้าปก
-
-## Step 15 — Drive image proxy and cache
-
-- [x] แก้รูป Google Drive ไม่แสดงในหน้าแรกและหน้ารายละเอียด
-- [x] เพิ่ม `/api/images/[fileId]` เป็น Image Proxy ฝั่ง Next.js
-- [x] ตรวจ Content-Type ก่อนส่งภาพ ป้องกันหน้า HTML ของ Google ถูกใช้เป็นรูป
-- [x] ใช้ Preview file ID จาก `thumbnail_url` แทน Original ID เมื่อแสดงภาพย่อ
-- [x] Lightbox โหลด Original เฉพาะเมื่อผู้ใช้กดดูเต็มจอ
-- [x] เพิ่ม Vercel CDN cache 7 วัน และ stale-while-revalidate
-- [x] เพิ่ม lazy loading และ async image decoding
-- [ ] ทดสอบรูปเก่าทุกชุดบน Production หลัง Deploy
-
-## Step 16 — 2026-08-04
-- [x] พักการโหลด Google Maps เพื่อไม่ให้หน้าฟอร์มขึ้นข้อผิดพลาด API
-- [x] ค้นหาสถานที่หลายผลลัพธ์ด้วยข้อมูลแผนที่สาธารณะและเติมพิกัดอัตโนมัติ
-- [x] ใช้ GPS ปัจจุบันและเติมตำบล อำเภอ จังหวัดอัตโนมัติ
-- [x] คะแนนแสดงดาว 5 ดวงเต็ม และเลื่อนค่าได้ทีละ 0.5
-- [x] ลด Preview เหลือด้านยาว 1120px คุณภาพ 0.68 เพื่อโหลดเร็วขึ้น
-- [x] แบ่งอัปโหลดฝั่งมือถือครั้งละ 3 รูป พร้อมกันสูงสุด 2 ชุด
-- [x] แสดงเปอร์เซ็นต์ระหว่างเตรียมและอัปโหลดรูป
-- [ ] กลับมาเปิด Google Maps หลังตั้งค่า API Key และ Billing พร้อม
-
-
-## Step 17 - Build Fix
-- [x] แก้ ESLint set-state-in-effect ใน LocationPicker
-- [x] แก้ Lightbox ไม่ให้ setState โดยตรงใน effect
-- [x] แก้ no-unused-expressions ใน gesture swipe
-- [x] จัด ZIP ให้ไฟล์อยู่ระดับราก ไม่ซ้อนโฟลเดอร์ release
-- [x] ป้องกัน TypeScript ตรวจโฟลเดอร์ TravelTank300-step-* และ backup
-
-
-## Step 18 - Lightbox fallback + OpenStreetMap
-- [x] แก้ Lightbox ให้ลองรูปต้นฉบับก่อน และสลับเป็น Preview ความละเอียดสูงอัตโนมัติเมื่อ Google Drive ต้นฉบับเปิดไม่ได้
-- [x] เพิ่ม loading state และข้อความภาพสำรองใน Lightbox
-- [x] เพิ่ม URL Google Drive สำรองหลายรูปแบบใน Image Proxy
-- [x] เปลี่ยนแผนที่เป็น Leaflet + OpenStreetMap ไม่ต้องใช้ Google Maps API key หรือ Billing
-- [x] เพิ่มค้นหาสถานที่แบบกดปุ่มและแสดงหลายผลลัพธ์
-- [x] แตะแผนที่และลากหมุดเพื่อเติมพิกัด/พื้นที่อัตโนมัติ
-- [x] เพิ่ม API proxy geocoding พร้อม cache เพื่อลดการเรียกบริการสาธารณะซ้ำ
-- [ ] หากมีผู้ใช้จำนวนมาก ให้ย้าย geocoding ไปผู้ให้บริการเฉพาะหรือโฮสต์ Nominatim เอง
-
-
-## Step 19
-- ช่องค้นหาสถานที่แยกเต็มหนึ่งบรรทัด
-- คะแนนแตะ/ลากได้ครั้งละ 0.5 ดาว
-- Lightbox ใช้ภาพ Preview ความละเอียดสูงและมี GAS fallback สำหรับไฟล์ Drive ที่ URL สาธารณะเปิดไม่ได้
-- ต้องอัปเดตและ Deploy GAS Code.gs เป็นเวอร์ชันใหม่
+### หมายเหตุ
+- Warning เรื่อง `<img>` ยอมรับชั่วคราว เพราะระบบใช้ Google Drive Image Proxy, Preview และ Lightbox fallback
+- ข้อความ SWC ถูก Windows Application Control บล็อกยังอาจแสดง แต่ Webpack สามารถใช้ WASM fallback ได้
+- ห้าม Commit/Push จนกว่า build ผ่าน

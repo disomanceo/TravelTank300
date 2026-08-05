@@ -1,46 +1,5 @@
-export function extractDriveFileId(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  const patterns = [
-    /[?&]id=([^&#]+)/i,
-    /\/d\/([^/?#]+)/i,
-    /googleusercontent\.com\/d\/([^=?&#/]+)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = trimmed.match(pattern);
-    if (match?.[1]) return decodeURIComponent(match[1]);
-  }
-
-  // A raw Drive file id is also accepted.
-  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) return trimmed;
-  return null;
-}
-
-function imageProxyUrl(fileId: string, width?: number, original = false) {
-  const params = new URLSearchParams();
-  if (width) params.set("w", String(width));
-  if (original) params.set("original", "1");
-  const query = params.toString();
-  return `/api/images/${encodeURIComponent(fileId)}${query ? `?${query}` : ""}`;
-}
-
-export function driveOriginalUrl(fileId: string | null | undefined, fallback: string) {
-  const resolvedId = fileId || extractDriveFileId(fallback);
-  return resolvedId ? imageProxyUrl(resolvedId, undefined, true) : fallback;
-}
-
-export function drivePreviewUrl(fileId: string | null | undefined, fallback: string, width = 960) {
-  // Prefer the preview/thumbnail file id contained in fallback. The stored
-  // drive_file_id normally points to the original file.
-  const previewId = extractDriveFileId(fallback);
-  const resolvedId = previewId || fileId;
-  return resolvedId ? imageProxyUrl(resolvedId, width) : fallback;
-}
-
-export function coverPreviewUrl(coverUrl: string | null | undefined, width = 480) {
-  const fileId = extractDriveFileId(coverUrl);
-  return fileId ? imageProxyUrl(fileId, width) : coverUrl || "/places/forest.svg";
-}
+export function extractDriveFileId(value:string|null|undefined){if(!value)return null;const v=value.trim();const direct=v.match(/^[\w-]{20,}$/);if(direct)return direct[0];for(const r of [/\/d\/([\w-]{20,})/,/[?&]id=([\w-]{20,})/,/thumbnail\?id=([\w-]{20,})/]){const m=v.match(r);if(m)return m[1]}return null}
+export function imageProxyUrl(id:string,w=960,original=false){return `/api/images/${encodeURIComponent(id)}?w=${w}${original?"&original=1":""}`}
+export function coverPreviewUrl(url:string|null|undefined,w=640){const id=extractDriveFileId(url);return id?imageProxyUrl(id,w):url||"/places/forest.svg"}
+export function drivePreviewUrl(id:string|null,url:string|null|undefined,w=960){const fileId=id||extractDriveFileId(url);return fileId?imageProxyUrl(fileId,w):url||"/places/forest.svg"}
+export function driveOriginalUrl(id:string|null,url:string|null|undefined){const fileId=id||extractDriveFileId(url);return fileId?imageProxyUrl(fileId,2400,true):url||"/places/forest.svg"}

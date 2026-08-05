@@ -1,105 +1,228 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import { CalendarIcon, ExternalLinkIcon, MapIcon, PinIcon } from "@/components/icons";
-import { PhotoLightbox } from "@/components/photo-lightbox";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { TravelHero } from "@/components/travel-hero";
-import { getPlaceById, listPlacePhotos, type TravelPlaceRow, type TravelPhotoRow } from "@/lib/travel/repository";
-import { coverPreviewUrl, drivePreviewUrl } from "@/lib/travel/image-url";
+import { PhotoLightbox } from "@/components/photo-lightbox";
+import { PhotoPicker, type PhotoItem } from "@/components/photo-picker";
+import { drivePreviewUrl } from "@/lib/travel/image-url";
+import {
+  appendPlacePhotos,
+  deletePhoto,
+  deletePlace,
+  getPlaceById,
+  listPlacePhotos,
+  setCoverPhoto,
+  type TravelPhotoRow,
+  type TravelPlaceRow,
+} from "@/lib/travel/repository";
+import { uploadTravelPhotos } from "@/lib/travel/uploads";
 
 export default function PlaceDetailPage() {
-  const params = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [place, setPlace] = useState<TravelPlaceRow | null>(null);
   const [photos, setPhotos] = useState<TravelPhotoRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [newPhotos, setNewPhotos] = useState<PhotoItem[]>([]);
+  const [coverId, setCoverId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let active = true;
-    async function load() {
-      try {
-        const [placeRow, photoRows] = await Promise.all([getPlaceById(params.id), listPlacePhotos(params.id)]);
-        if (active) {
-          setPlace(placeRow);
-          setPhotos(photoRows);
-        }
-      } catch (loadError) {
-        if (active) setError(loadError instanceof Error ? loadError.message : "โหลดข้อมูลไม่สำเร็จ");
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-    void load();
-    return () => { active = false; };
-  }, [params.id]);
 
-  const orderedPhotos = useMemo(
-    () => [...photos].sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || a.sort_order - b.sort_order),
-    [photos],
-  );
+    Promise.all([getPlaceById(id), listPlacePhotos(id)])
+      .then(([nextPlace, nextPhotos]) => {
+        if (!active) return;
+        setPlace(nextPlace);
+        setPhotos(nextPhotos);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setMessage(error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ");
+      });
 
-  if (loading) return <main className="app-shell"><TravelHero title="กำลังโหลด" subtitle="กำลังดึงรายละเอียดสถานที่" backHref="/places" compact /><div className="data-state"><span className="loading-dot" />กำลังโหลด…</div></main>;
-  if (error || !place) return <main className="app-shell"><TravelHero title="ไม่พบข้อมูล" subtitle="ไม่สามารถเปิดสถานที่นี้ได้" backHref="/places" compact /><div className="data-state error">{error || "ไม่พบสถานที่"}</div></main>;
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
-  const latitude = place.latitude ?? 0;
-  const longitude = place.longitude ?? 0;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-  const embedUrl = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
-  const coverPreview = orderedPhotos[0]
-    ? drivePreviewUrl(orderedPhotos[0].drive_file_id, orderedPhotos[0].thumbnail_url || orderedPhotos[0].drive_url)
-    : coverPreviewUrl(place.cover_image_url, 1280);
+  async function reload() {
+    const [nextPlace, nextPhotos] = await Promise.all([
+      getPlaceById(id),
+      listPlacePhotos(id),
+    ]);
+    setPlace(nextPlace);
+    setPhotos(nextPhotos);
+  }
 
-  function openPhoto(index: number) {
-    setLightboxIndex(index);
-    setLightboxOpen(true);
+  if (!place) {
+    return <p className="loading-page">{message || "กำลังโหลด…"}</p>;
   }
 
   return (
-    <main className="app-shell detail-shell">
-      <TravelHero title={place.name} subtitle={`${place.category} · ${place.province || "ไม่ระบุจังหวัด"}`} backHref="/places" editable editHref="/places/new" />
-      <section className="detail-content">
-        <button className="hero-image-button" type="button" onClick={() => orderedPhotos.length && openPhoto(0)}>
-          <img fetchPriority="high" decoding="async" src={coverPreview} alt={place.name} />
-          <span>{orderedPhotos.length ? "กดดูรูปต้นฉบับ" : "ยังไม่มีรูปภาพ"}</span>
-        </button>
+    <main>
+      <TravelHero
+        title={place.name}
+        subtitle={`${place.category} · ${place.province || "ไม่ระบุจังหวัด"}`}
+        backHref="/places"
+        editHref={`/places/${id}/edit`}
+      />
 
-        {orderedPhotos.length > 1 && (
-          <div className="mini-gallery">
-            {orderedPhotos.slice(0, 5).map((photo, index) => (
-              <button key={photo.id} type="button" onClick={() => openPhoto(index)} aria-label={`เปิดรูปที่ ${index + 1}`}>
-                <img loading="lazy" decoding="async" src={drivePreviewUrl(photo.drive_file_id, photo.thumbnail_url || photo.drive_url, 640)} alt={`${place.name} รูปที่ ${index + 1}`} />
-                {index === 4 && orderedPhotos.length > 5 && <span className="gallery-more-count">+{orderedPhotos.length - 5}</span>}
-              </button>
+      <section className="content">
+        <section className="card">
+          <div className="gallery">
+            {photos.map((photo, index) => (
+              <div key={photo.id}>
+                <button type="button" onClick={() => setLightboxIndex(index)}>
+                  {/* Drive proxy/fallback ต้องใช้ img โดยตรง */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={drivePreviewUrl(
+                      photo.drive_file_id,
+                      photo.thumbnail_url || photo.drive_url,
+                    )}
+                    alt={`${place.name} รูปที่ ${index + 1}`}
+                  />
+                </button>
+                <div>
+                  <button
+                    type="button"
+                    disabled={photo.is_cover || busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        await setCoverPhoto(id, photo);
+                        await reload();
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    {photo.is_cover ? "หน้าปก" : "ตั้งหน้าปก"}
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-text"
+                    disabled={busy}
+                    onClick={async () => {
+                      const confirmed = window.confirm(
+                        "ต้องการลบรูปภาพนี้หรือไม่ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+                      );
+                      if (!confirmed) return;
+                      setBusy(true);
+                      try {
+                        await deletePhoto(id, photo);
+                        await reload();
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    ลบรูป
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
-        )}
-
-        <section className="detail-card place-intro">
-          <div className="title-with-status"><div><span className="category-label">{place.category}</span><h2>{place.name}</h2></div><span className="status-chip visited">บันทึกแล้ว</span></div>
-          <p>{place.note || "ยังไม่มีบันทึกเพิ่มเติม"}</p>
         </section>
 
-        <section className="detail-card">
-          <h2>ข้อมูลการเดินทาง</h2>
-          <div className="info-grid">
-            <div><CalendarIcon /><span><small>วันที่เดินทาง</small><strong>{place.visit_date || "ไม่ระบุ"}</strong></span></div>
-            <div><PinIcon /><span><small>พื้นที่</small><strong>{[place.subdistrict, place.district, place.province].filter(Boolean).join(" · ") || "ไม่ระบุ"}</strong></span></div>
-          </div>
+        <section className="card">
+          <h2>รายละเอียด</h2>
+          <p>{place.note || "ยังไม่มีรายละเอียด"}</p>
+          <p>★ {(place.rating || 0).toFixed(1)} / 5</p>
+          <p>
+            {[place.subdistrict, place.district, place.province]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          <Link className="primary" href={`/places/${id}/edit`}>
+            แก้ไขข้อมูล
+          </Link>
         </section>
 
-        <section className="detail-card map-card">
-          <div className="map-heading"><div><span className="category-label">LOCATION</span><h2>แผนที่และพิกัด</h2></div><MapIcon /></div>
-          <p className="address-line"><PinIcon />{place.location_name || "ตำแหน่งที่บันทึก"}</p>
-          <div className="coordinate-row readonly-coordinates"><span>ละติจูด <strong>{latitude.toFixed(6)}</strong></span><span>ลองจิจูด <strong>{longitude.toFixed(6)}</strong></span></div>
-          <div className="map-frame"><iframe title={`แผนที่ ${place.name}`} src={embedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div>
-          <a className="maps-button" href={mapsUrl} target="_blank" rel="noreferrer"><ExternalLinkIcon /> เปิดใน Google Maps</a>
+        <section className="card">
+          <h2>เพิ่มรูปภาพ</h2>
+          <PhotoPicker
+            photos={newPhotos}
+            coverId={coverId}
+            onPhotos={setNewPhotos}
+            onCover={setCoverId}
+          />
+          <button
+            type="button"
+            className="primary"
+            disabled={busy || !newPhotos.length}
+            onClick={async () => {
+              setBusy(true);
+              setMessage("");
+              try {
+                const ordered = [...newPhotos].sort((a, b) =>
+                  a.id === coverId ? -1 : b.id === coverId ? 1 : 0,
+                );
+                const uploaded = await uploadTravelPhotos(
+                  ordered.map((item) => item.file),
+                  id,
+                  (done, total) =>
+                    setMessage(`อัปโหลด ${Math.round((done / total) * 100)}%`),
+                );
+                await appendPlacePhotos(id, uploaded);
+                setNewPhotos([]);
+                setCoverId(null);
+                setMessage("เพิ่มรูปเรียบร้อย");
+                await reload();
+              } catch (error) {
+                setMessage(
+                  error instanceof Error ? error.message : "เพิ่มรูปไม่สำเร็จ",
+                );
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? "กำลังเพิ่มรูป…" : "เพิ่มรูปเข้ารายการ"}
+          </button>
+          {message && <p className="hint">{message}</p>}
+        </section>
+
+        <section className="card danger-zone">
+          <h2>ลบสถานที่</h2>
+          <p>ข้อมูลและความสัมพันธ์ของรูปจะถูกลบ ไม่สามารถย้อนกลับได้</p>
+          <button
+            type="button"
+            className="danger"
+            disabled={busy}
+            onClick={async () => {
+              const confirmed = window.confirm(
+                `ยืนยันลบ “${place.name}” และรูปทั้งหมดหรือไม่`,
+              );
+              if (!confirmed) return;
+              setBusy(true);
+              try {
+                await deletePlace(id);
+                router.push("/places?deleted=1");
+              } catch (error) {
+                setMessage(
+                  error instanceof Error ? error.message : "ลบสถานที่ไม่สำเร็จ",
+                );
+                setBusy(false);
+              }
+            }}
+          >
+            ลบสถานที่ท่องเที่ยว
+          </button>
         </section>
       </section>
 
-      <PhotoLightbox key={`${lightboxOpen}-${lightboxIndex}`} photos={orderedPhotos} placeName={place.name} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photos={photos}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </main>
   );
 }
