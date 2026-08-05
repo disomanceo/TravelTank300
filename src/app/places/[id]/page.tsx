@@ -29,6 +29,7 @@ export default function PlaceDetailPage() {
   const [coverId, setCoverId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -190,31 +191,13 @@ export default function PlaceDetailPage() {
         <section className="card danger-zone">
           <h2>ลบสถานที่</h2>
           <p>ข้อมูลและความสัมพันธ์ของรูปจะถูกลบ ไม่สามารถย้อนกลับได้</p>
-          <button
-            type="button"
-            className="danger"
-            disabled={busy}
-            onClick={async () => {
-              const confirmed = window.confirm(
-                `ยืนยันลบ “${place.name}” และรูปทั้งหมดหรือไม่`,
-              );
-              if (!confirmed) return;
-              setBusy(true);
-              try {
-                await deletePlace(id);
-                router.push("/places?deleted=1");
-              } catch (error) {
-                setMessage(
-                  error instanceof Error ? error.message : "ลบสถานที่ไม่สำเร็จ",
-                );
-                setBusy(false);
-              }
-            }}
-          >
+          <button type="button" className="danger" disabled={busy} onClick={() => setShowDelete(true)}>
             ลบสถานที่ท่องเที่ยว
           </button>
         </section>
       </section>
+
+      {showDelete && <div className="delete-sheet-backdrop" role="presentation" onClick={() => !busy && setShowDelete(false)}><section className="delete-sheet" role="dialog" aria-modal="true" aria-labelledby="delete-title" onClick={(event) => event.stopPropagation()}><h2 id="delete-title">ลบสถานที่นี้หรือไม่</h2><p>“{place.name}” พร้อมข้อมูลและความสัมพันธ์ของรูปภาพจะถูกลบ การดำเนินการนี้ไม่สามารถย้อนกลับได้</p><div className="delete-actions"><button type="button" className="cancel" disabled={busy} onClick={() => setShowDelete(false)}>ยกเลิก</button><button type="button" className="confirm" disabled={busy} onClick={async()=>{setBusy(true);try{await deletePlace(id);router.push("/places?deleted=1")}catch(error){setMessage(error instanceof Error?error.message:"ลบสถานที่ไม่สำเร็จ");setBusy(false);setShowDelete(false)}}}>{busy?"กำลังลบ…":"ยืนยันลบ"}</button></div></section></div>}
 
       {lightboxIndex !== null && (
         <PhotoLightbox
