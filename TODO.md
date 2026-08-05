@@ -1,31 +1,53 @@
-# TravelTank300 TODO — Step 23 UI Restore
+# TravelTank300 TODO — Step 24
 
-ฐานอ้างอิง UI: Commit `2e1a31d`
+## ฐานงาน
+- UI Master: Commit `2e1a31d`
+- ต่อจาก Step 23 ที่ lint/build ผ่าน
+- Project: `D:\TravelTank300`
 
-## เสร็จแล้ว
-- [x] คืนรูปแบบ Hero, สี,ฟอนต์, ระยะห่าง, Search, Tabs และรายการสถานที่ให้ใกล้เคียง Commit `2e1a31d`
-- [x] รักษาฟีเจอร์เพิ่ม แก้ไข เพิ่มรูป เปลี่ยนหน้าปก ลบรูป และลบสถานที่
-- [x] ปรับการลบสถานที่เป็น Bottom Sheet ยืนยันแบบ Mobile-first
-- [x] คะแนนแสดงดาว 5 ดวง และเลือกเพิ่ม/ลดครั้งละ 0.5
-- [x] ช่องค้นหาสถานที่อยู่ใต้พื้นที่แผนที่
-- [x] ค้นหาอัตโนมัติหลังหยุดพิมพ์ประมาณ 500 ms และแสดงหลายผลลัพธ์
-- [x] ใช้ Webpack สำหรับ `dev` และ `build` เพื่อรองรับเครื่องที่ SWC native ถูกบล็อก
-- [x] ZIP วางไฟล์ระดับราก ไม่มีโฟลเดอร์ TravelTank300 ซ้อน
+## ทำเสร็จใน Step 24
+- [x] เพิ่ม PWA Manifest สำหรับ iOS และ Android
+- [x] สร้างไอคอน 120, 152, 167, 180, 192, 384 และ 512px จากโลโก้ Travel Tank300
+- [x] เพิ่ม Maskable icon สำหรับ Android
+- [x] เพิ่ม Apple Touch Icon และ metadata แบบ standalone
+- [x] เพิ่ม Service Worker สำหรับ App Shell และ Offline fallback เบื้องต้น
+- [x] แก้ LocationPicker จาก Placeholder เป็น Leaflet/OpenStreetMap จริง
+- [x] แตะแผนที่เพื่อปักหมุดได้
+- [x] ลากหมุดเพื่อปรับพิกัดได้
+- [x] GPS เลื่อนแผนที่และหมุดไปยังตำแหน่งปัจจุบัน
+- [x] Reverse geocoding หลังแตะ/ลากหมุด
+- [x] ช่องค้นหาสถานที่อยู่ใต้แผนที่
+- [x] Bottom Navigation อยู่ใน Root Layout จึงแสดงทุกหน้า
+- [x] รองรับ Safe Area ของ iPhone
+- [x] ZIP ไม่มีโฟลเดอร์โปรเจกต์ซ้อน
 
 ## ต้องทดสอบบนเครื่อง
-- [ ] `npm.cmd install`
 - [ ] `npm.cmd run lint`
 - [ ] `npm.cmd run build`
-- [ ] ตรวจหน้า `/places` เทียบรูปแบบกับ Commit `2e1a31d`
-- [ ] ตรวจ Hero ใช้ไฟล์ `/public/brand/traveltank300-hero.jpg` เดิม
-- [ ] เลือกคะแนน 0.5, 2.5, 4.5 และ 5
-- [ ] ตรวจช่องค้นหาอยู่ใต้แผนที่
-- [ ] ทดสอบชื่อสถานที่ซ้ำและเลือกผลลัพธ์
-- [ ] ทดสอบแก้ไขข้อมูล เพิ่มรูป เปลี่ยนหน้าปก และลบรูป
-- [ ] ทดสอบ Bottom Sheet ลบสถานที่ ทั้งยกเลิกและยืนยัน
-- [ ] ตรวจ Lightbox และรูปเก่าบน Production
+- [ ] เปิด `/places/new` แล้วเห็นแผนที่จริง
+- [ ] แตะแผนที่และลากหมุด
+- [ ] ค้นหาสถานที่จากช่องใต้แผนที่
+- [ ] ตรวจ Bottom Navigation ที่ `/places`, `/places/new`, `/places/[id]`, `/places/[id]/edit`, `/plans`, `/plans/new`
+- [ ] Deploy Production HTTPS และทดสอบติดตั้ง Android
+- [ ] ทดสอบ Add to Home Screen บน iPhone
 
-## หมายเหตุ
-- คำเตือน `<img>` ยังคงยอมรับชั่วคราว เพราะระบบใช้ Google Drive Image Proxy และ fallback
-- หากรูป Hero ไม่ขึ้น ให้ตรวจว่าไฟล์เดิม `public/brand/traveltank300-hero.jpg` ยังอยู่ในโปรเจกต์
-- ยังไม่ Commit/Push จนกว่า lint, build และการทดสอบฟังก์ชันจริงจะผ่าน
+## ข้อควรระวัง
+- Leaflet โหลด CSS/JS จาก unpkg CDN ต้องมีอินเทอร์เน็ตในการเปิดแผนที่ครั้งแรก
+- Nominatim เป็นบริการสาธารณะ ควรจำกัดความถี่และคง debounce 500ms
+- SWC native ถูก Windows Application Control บล็อกได้ แต่ใช้ Webpack + WASM build ได้
+- ยังไม่ Commit/Push จนกว่า lint และ build ผ่าน
+
+## งานถัดไป
+- [ ] ทดสอบ PWA บน Production จริง
+- [ ] ทำ Offline queue สำหรับการบันทึกและอัปโหลดรูป
+- [ ] เพิ่มปุ่มติดตั้งแอปภายใน UI สำหรับ Android
+- [ ] เพิ่ม Background Sync/Retry
+
+## Step 24.1 — Build compatibility fix
+- [x] แก้หน้า `/plans` ไม่ให้เรียก `<BottomNav active="plans" />` แบบเดิม
+- [x] ใช้ Bottom Navigation ส่วนกลางจาก Root Layout เพียงชุดเดียว
+- [x] ป้องกันเมนูด้านล่างซ้ำในหน้าแผนการเดินทาง
+- [x] แก้ TypeScript error `Property 'active' does not exist`
+- [ ] รัน `npm.cmd run lint`
+- [ ] รัน `npm.cmd run build`
+- [ ] ตรวจ `/plans` และ `/plans/new` ว่ามี Bottom Navigation เพียงหนึ่งชุด

@@ -1,12 +1,5 @@
+"use client";
 import Link from "next/link";
-import { BookIcon, CalendarIcon, MapIcon, UserIcon } from "./icons";
-
-export function BottomNav({ active }: { active: "places" | "plans" }) {
-  const links = [
-    { href: "/places", label: "สถานที่", key: "places", icon: MapIcon },
-    { href: "/plans", label: "วางแผน", key: "plans", icon: CalendarIcon },
-    { href: "/places/new", label: "บันทึก", key: "journal", icon: BookIcon },
-    { href: "#", label: "โปรไฟล์", key: "profile", icon: UserIcon },
-  ];
-  return <nav className="bottom-nav" aria-label="เมนูหลัก">{links.map(({href,label,key,icon:Icon}) => <Link key={key} href={href} className={active===key?"nav-item active":"nav-item"}><Icon/><span>{label}</span></Link>)}</nav>;
-}
+import { usePathname } from "next/navigation";
+function Icon({name}:{name:"home"|"place"|"add"|"plan"}){const p={home:"M3 11.5 12 4l9 7.5V21h-6v-6H9v6H3z",place:"M12 22s7-6.1 7-13A7 7 0 1 0 5 9c0 6.9 7 13 7 13Zm0-9.5A3.5 3.5 0 1 1 12 5a3.5 3.5 0 0 1 0 7.5Z",add:"M12 5v14M5 12h14",plan:"M4 6.5 9 4l6 2.5L20 4v14l-5 2-6-2.5L4 20zM9 4v13.5M15 6.5V20"}[name];return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={p} fill={name==="home"||name==="place"?"currentColor":"none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+export function BottomNav(){const path=usePathname();const items=[{href:"/places",label:"สถานที่",icon:"place" as const,active:path==="/"||path.startsWith("/places")},{href:"/places/new",label:"เพิ่ม",icon:"add" as const,active:path==="/places/new"},{href:"/plans",label:"วางแผน",icon:"plan" as const,active:path.startsWith("/plans")},{href:"/places",label:"หน้าหลัก",icon:"home" as const,active:false}];return <nav className="bottom-nav" aria-label="เมนูหลัก">{items.map(x=><Link key={`${x.href}-${x.label}`} href={x.href} className={`nav-item${x.active?" active":""}`}><Icon name={x.icon}/><span>{x.label}</span></Link>)}</nav>}

@@ -1,0 +1,66 @@
+{
+  "name": "Travel Tank300",
+  "short_name": "TravelTank300",
+  "description": "บันทึกการท่องเที่ยวสายออฟโรด By Tank300",
+  "start_url": "/places",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f8f6",
+  "theme_color": "#075749",
+  "lang": "th",
+  "categories": [
+    "travel",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "เพิ่มสถานที่",
+      "short_name": "เพิ่มสถานที่",
+      "url": "/places/new",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "สถานที่ทั้งหมด",
+      "short_name": "สถานที่",
+      "url": "/places",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,9 @@
-node_modules/
-.next/
-out/
-.env*
-!.env.example
-.vercel/
+node_modules
+.next
+out
+.env.local
 *.log
 .DS_Store
 Thumbs.db
+
+.vercel/
