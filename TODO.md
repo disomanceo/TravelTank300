@@ -1,53 +1,60 @@
-# TravelTank300 TODO — Step 24
+# TravelTank300 TODO — Step 29
 
-## ฐานงาน
-- UI Master: Commit `2e1a31d`
-- ต่อจาก Step 23 ที่ lint/build ผ่าน
-- Project: `D:\TravelTank300`
+ฐานอ้างอิง UI: Commit `2e1a31d`
 
-## ทำเสร็จใน Step 24
-- [x] เพิ่ม PWA Manifest สำหรับ iOS และ Android
-- [x] สร้างไอคอน 120, 152, 167, 180, 192, 384 และ 512px จากโลโก้ Travel Tank300
-- [x] เพิ่ม Maskable icon สำหรับ Android
-- [x] เพิ่ม Apple Touch Icon และ metadata แบบ standalone
-- [x] เพิ่ม Service Worker สำหรับ App Shell และ Offline fallback เบื้องต้น
-- [x] แก้ LocationPicker จาก Placeholder เป็น Leaflet/OpenStreetMap จริง
-- [x] แตะแผนที่เพื่อปักหมุดได้
-- [x] ลากหมุดเพื่อปรับพิกัดได้
-- [x] GPS เลื่อนแผนที่และหมุดไปยังตำแหน่งปัจจุบัน
-- [x] Reverse geocoding หลังแตะ/ลากหมุด
-- [x] ช่องค้นหาสถานที่อยู่ใต้แผนที่
-- [x] Bottom Navigation อยู่ใน Root Layout จึงแสดงทุกหน้า
-- [x] รองรับ Safe Area ของ iPhone
-- [x] ZIP ไม่มีโฟลเดอร์โปรเจกต์ซ้อน
+## งานที่ทำใน Step 29
 
-## ต้องทดสอบบนเครื่อง
+- [x] แก้หน้าแรกให้ใช้ `cover_drive_file_id` เป็นแหล่งรูปหลัก
+- [x] ใช้ `cover_image_url` เป็น fallback สำหรับข้อมูลเก่า
+- [x] โหลดรายการสถานที่ใหม่เมื่อกลับมาที่หน้า `/places`
+- [x] โหลดใหม่เมื่อ Browser focus, `pageshow` หรือกลับจาก PWA background
+- [x] ตรวจ Error ทุกขั้นตอนของการตั้งรูปหน้าปก
+- [x] ตรวจว่าตาราง `travel_places` ถูกอัปเดตจริง ไม่ใช่ RLS ปฏิเสธแบบเงียบ
+- [x] รองรับฐานข้อมูลที่มีหรือไม่มีคอลัมน์ `updated_at`
+- [x] คง UI จาก Commit `2e1a31d`
+- [x] ZIP อยู่ระดับราก ไม่มีโฟลเดอร์โปรเจกต์ซ้อน
+
+## สาเหตุเดิม
+
+หน้าแรกใช้เฉพาะ `cover_image_url` และเก็บ state รายการเดิมไว้เมื่อย้อนกลับจากหน้ารายละเอียด ทำให้แม้เลือกหน้าปกสำเร็จ หน้าแรกอาจยังแสดงภาพเดิมหรือ Placeholder จนกว่าจะ Reload หน้าใหม่
+
+## ต้องทดสอบ
+
 - [ ] `npm.cmd run lint`
 - [ ] `npm.cmd run build`
-- [ ] เปิด `/places/new` แล้วเห็นแผนที่จริง
-- [ ] แตะแผนที่และลากหมุด
-- [ ] ค้นหาสถานที่จากช่องใต้แผนที่
-- [ ] ตรวจ Bottom Navigation ที่ `/places`, `/places/new`, `/places/[id]`, `/places/[id]/edit`, `/plans`, `/plans/new`
-- [ ] Deploy Production HTTPS และทดสอบติดตั้ง Android
-- [ ] ทดสอบ Add to Home Screen บน iPhone
+- [ ] เลือกรูปหนึ่งเป็นหน้าปกในหน้ารายละเอียด
+- [ ] ตรวจ Badge `รูปหน้าปก`
+- [ ] กดย้อนกลับหน้า `/places` แล้วเห็นหน้าปกใหม่ทันที
+- [ ] ปิดและเปิด PWA ใหม่แล้วรูปหน้าปกยังถูกต้อง
+- [ ] Refresh หน้า `/places` แล้วรูปยังแสดง
+- [ ] ทดสอบข้อมูลรูปเก่าที่ไม่มี `cover_drive_file_id`
 
 ## ข้อควรระวัง
-- Leaflet โหลด CSS/JS จาก unpkg CDN ต้องมีอินเทอร์เน็ตในการเปิดแผนที่ครั้งแรก
-- Nominatim เป็นบริการสาธารณะ ควรจำกัดความถี่และคง debounce 500ms
-- SWC native ถูก Windows Application Control บล็อกได้ แต่ใช้ Webpack + WASM build ได้
-- ยังไม่ Commit/Push จนกว่า lint และ build ผ่าน
 
-## งานถัดไป
-- [ ] ทดสอบ PWA บน Production จริง
-- [ ] ทำ Offline queue สำหรับการบันทึกและอัปโหลดรูป
-- [ ] เพิ่มปุ่มติดตั้งแอปภายใน UI สำหรับ Android
-- [ ] เพิ่ม Background Sync/Retry
+- หากขึ้นข้อความว่า `ฐานข้อมูลไม่อนุญาตให้อัปเดตรูปหน้าปกของสถานที่` ต้องตรวจ Supabase RLS Update Policy ของตาราง `travel_places`
+- ยังไม่ Commit/Push จนกว่า lint, build และการทดสอบจริงจะผ่าน
 
-## Step 24.1 — Build compatibility fix
-- [x] แก้หน้า `/plans` ไม่ให้เรียก `<BottomNav active="plans" />` แบบเดิม
-- [x] ใช้ Bottom Navigation ส่วนกลางจาก Root Layout เพียงชุดเดียว
-- [x] ป้องกันเมนูด้านล่างซ้ำในหน้าแผนการเดินทาง
-- [x] แก้ TypeScript error `Property 'active' does not exist`
-- [ ] รัน `npm.cmd run lint`
-- [ ] รัน `npm.cmd run build`
-- [ ] ตรวจ `/plans` และ `/plans/new` ว่ามี Bottom Navigation เพียงหนึ่งชุด
+
+## Step 29.1 — Build guard for place name
+- [x] แก้ TypeScript `place is possibly null` ในหน้าเพิ่มรูปจากรายละเอียดสถานที่
+- [x] ใช้ชื่อสถานที่แบบปลอดภัยก่อนส่งเข้า upload queue
+- [ ] รัน `npm.cmd run lint` บนเครื่องผู้ใช้
+- [ ] รัน `npm.cmd run build` บนเครื่องผู้ใช้
+- [ ] ทดสอบตั้งรูปหน้าปกและตรวจหน้า `/places`
+- [ ] ยังไม่ Commit/Push จนกว่าจะทดสอบผ่าน
+
+
+## Step 30 — Cover fallback + Plans UI
+- [x] หน้า `/places` อ่านรูปหน้าปกจากข้อมูลรูปจริงและมี fallback ตามลำดับ
+- [x] หน้า `/plans` ใช้ UI แนวเดียวกับหน้าสถานที่
+- [x] แสดงรูป จุดหมาย วันที่ งบประมาณ หมายเหตุ จำนวนรูป และสถานะ
+- [x] ใช้ข้อมูลจริงจาก Supabase
+
+## Step 30.1 — React 19 lint fix
+- [x] เลื่อน initial load ของหน้า `/places` ออกจาก effect body ด้วย timer callback
+- [x] ยกวันที่อ้างอิงออกจาก render เพื่อไม่เรียก `Date.now()` ระหว่าง render
+- [ ] รัน `npm.cmd run lint` บนเครื่องผู้ใช้
+- [ ] รัน `npm.cmd run build` บนเครื่องผู้ใช้
+- [ ] ตรวจรูปหน้าปกหน้า `/places`
+- [ ] ตรวจหน้า `/plans` และตัวกรองสถานะ
+- [ ] ยังไม่ Commit/Push จนกว่าจะทดสอบผ่าน

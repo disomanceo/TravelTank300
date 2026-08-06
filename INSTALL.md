@@ -1,32 +1,21 @@
-# Travel Tank300 — Step 24 ติดตั้ง
+# Step 29 — Cover Image Fix
 
-## ติดตั้งโค้ดบน Windows
+1. คัดลอกไฟล์ทั้งหมดใน ZIP ไปทับ `D:\TravelTank300`
+2. รัน:
+
 ```powershell
-# หยุด npm run dev ด้วย Ctrl+C ก่อน
-$zip = "$env:USERPROFILE\Downloads\TravelTank300-step-24-pwa-map-nav-clean-root.zip"
-$temp = "$env:USERPROFILE\Downloads\TravelTank300-step-24-temp"
-Remove-Item $temp -Recurse -Force -ErrorAction SilentlyContinue
-Expand-Archive -Path $zip -DestinationPath $temp -Force
-Remove-Item "D:\TravelTank300\TravelTank300" -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item -Path "$temp\*" -Destination "D:\TravelTank300" -Recurse -Force
-Set-Location "D:\TravelTank300"
+cd D:\TravelTank300
 npm.cmd install
 npm.cmd run lint
 npm.cmd run build
 npm.cmd run dev
 ```
-เปิด `http://localhost:3000`
 
-## ติดตั้งเป็นแอป Android
-1. Deploy เว็บบน HTTPS เช่น Vercel
-2. เปิดด้วย Chrome
-3. กดเมนู ⋮ แล้วเลือก **ติดตั้งแอป** หรือ **เพิ่มลงในหน้าจอหลัก**
-4. ไอคอน Travel Tank300 จะปรากฏบนหน้าจอและเปิดแบบเต็มจอ
+3. เปิดสถานที่ เลือกรูปเป็นหน้าปก แล้วกลับหน้า `/places`
+4. รูปหน้าปกใหม่ต้องแสดงทันทีโดยไม่ต้องกด Refresh
 
-## ติดตั้งเป็นแอป iPhone/iPad
-1. เปิดเว็บ Production ด้วย Safari
-2. กดปุ่ม Share
-3. เลือก **Add to Home Screen / เพิ่มไปยังหน้าจอโฮม**
-4. กด Add
+รอบนี้ไม่ต้อง Deploy GAS ใหม่ เพราะแก้เฉพาะ Supabase และหน้าเว็บ
 
-หมายเหตุ: การติดตั้ง PWA และ GPS ต้องใช้งานผ่าน HTTPS ยกเว้น localhost
+
+## Step 29.1
+ZIP วางไฟล์ไว้ระดับราก ให้ใช้คำสั่งค้นหา ZIP อัตโนมัติจาก Downloads เพื่อหลีกเลี่ยงปัญหาชื่อไฟล์หรือพาธไม่ตรง

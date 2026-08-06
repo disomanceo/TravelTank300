@@ -1,9 +1,14 @@
 import type { UploadedPhoto } from "@/types/travel";
 
-const MAX_EDGE = 1120;
-const QUALITY = 0.68;
-const BATCH_SIZE = 3;
-const MAX_CONCURRENT_BATCHES = 2;
+const PREVIEW_MAX_EDGE = 960;
+const PREVIEW_QUALITY = 0.62;
+const ORIGINAL_START_EDGE = 1900;
+const ORIGINAL_MIN_EDGE = 1300;
+const ORIGINAL_START_QUALITY = 0.78;
+const ORIGINAL_MIN_QUALITY = 0.5;
+const MAX_REQUEST_JSON_BYTES = 3_650_000;
+const MAX_CONCURRENT_UPLOADS = 1;
+const MAX_RETRIES = 3;
 
 type PreparedPhoto = {
   original: File;
@@ -17,95 +22,148 @@ type UploadPayload = {
   previewBase64: string;
 };
 
-async function createPreview(file: File): Promise<File> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+type UploadApiResponse = {
+  files?: UploadedPhoto[];
+  message?: string;
+};
 
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (value) => (value ? resolve(value) : reject(new Error("สร้าง Preview ไม่สำเร็จ"))),
-      "image/jpeg",
-      QUALITY,
-    );
-  });
+function jsonByteLength(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).byteLength;
+}
 
-  bitmap.close();
-  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}-preview.jpg`, {
-    type: "image/jpeg",
-  });
+async function canvasFile(
+  source: File,
+  maxEdge: number,
+  quality: number,
+  suffix: string,
+): Promise<File> {
+  const bitmap = await createImageBitmap(source);
+  try {
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("ไม่สามารถเตรียมรูปภาพได้");
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (value) => (value ? resolve(value) : reject(new Error("บีบอัดรูปไม่สำเร็จ"))),
+        "image/jpeg",
+        quality,
+      );
+    });
+
+    const baseName = source.name.replace(/\.[^.]+$/, "") || "travel-photo";
+    return new File([blob], `${baseName}-${suffix}.jpg`, { type: "image/jpeg" });
+  } finally {
+    bitmap.close();
+  }
 }
 
 async function toBase64(file: File): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => reject(reader.error ?? new Error("อ่านไฟล์รูปไม่สำเร็จ"));
     reader.readAsDataURL(file);
   });
+}
+
+async function preparePayload(file: File, groupId: string): Promise<UploadPayload> {
+  const preview = await canvasFile(file, PREVIEW_MAX_EDGE, PREVIEW_QUALITY, "preview");
+  const previewBase64 = await toBase64(preview);
+
+  let edge = ORIGINAL_START_EDGE;
+  let quality = ORIGINAL_START_QUALITY;
+
+  while (true) {
+    const original = await canvasFile(file, edge, quality, "original");
+    const originalBase64 = await toBase64(original);
+    const payload: UploadPayload = {
+      fileName: original.name.replace(/-original\.jpg$/, ".jpg"),
+      mimeType: "image/jpeg",
+      originalBase64,
+      previewBase64,
+    };
+
+    const requestBody = { groupId, files: [payload] };
+    if (jsonByteLength(requestBody) <= MAX_REQUEST_JSON_BYTES) return payload;
+
+    if (quality > ORIGINAL_MIN_QUALITY) {
+      quality = Math.max(ORIGINAL_MIN_QUALITY, quality - 0.08);
+      continue;
+    }
+    if (edge > ORIGINAL_MIN_EDGE) {
+      edge = Math.max(ORIGINAL_MIN_EDGE, edge - 200);
+      quality = 0.68;
+      continue;
+    }
+
+    throw new Error("รูปภาพมีขนาดใหญ่เกินไปหลังบีบอัด กรุณาลองเลือกรูปอื่น");
+  }
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+async function uploadOne(
+  file: File,
+  groupId: string,
+  placeName: string,
+  attempt = 1,
+): Promise<UploadedPhoto> {
+  try {
+    const payload = await preparePayload(file, groupId);
+    const body = JSON.stringify({ groupId, placeName, files: [payload] });
+
+    const response = await fetch("/api/uploads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+
+    const data = (await response.json().catch(() => ({}))) as UploadApiResponse;
+    if (!response.ok || !data.files?.length) {
+      throw new Error(data.message || `อัปโหลดไม่สำเร็จ (HTTP ${response.status})`);
+    }
+    return data.files[0];
+  } catch (error) {
+    if (attempt < MAX_RETRIES) {
+      await wait(800 * attempt);
+      return uploadOne(file, groupId, placeName, attempt + 1);
+    }
+    throw error;
+  }
 }
 
 export async function uploadTravelPhotos(
   files: File[],
   groupId: string,
   onProgress?: (done: number, total: number) => void,
+  placeName = "สถานที่ไม่ระบุชื่อ",
 ): Promise<UploadedPhoto[]> {
-  if (!files.length) return [];
+  const images = files.filter((file) => file.type.startsWith("image/"));
+  if (!images.length) return [];
 
-  let preparedCount = 0;
-  const preparedPhotos: PreparedPhoto[] = await Promise.all(
-    files.map(async (file) => {
-      const preview = await createPreview(file);
-      preparedCount += 1;
-      onProgress?.(preparedCount, files.length * 2);
-      return { original: file, preview };
-    }),
-  );
-
-  const batches: PreparedPhoto[][] = [];
-  for (let index = 0; index < preparedPhotos.length; index += BATCH_SIZE) {
-    batches.push(preparedPhotos.slice(index, index + BATCH_SIZE));
-  }
-
-  const results: UploadedPhoto[][] = new Array<UploadedPhoto[]>(batches.length);
-  let nextBatchIndex = 0;
-  let uploadedCount = 0;
+  const results: UploadedPhoto[] = new Array(images.length);
+  let cursor = 0;
+  let completed = 0;
 
   async function worker(): Promise<void> {
     while (true) {
-      const batchIndex = nextBatchIndex;
-      nextBatchIndex += 1;
-      if (batchIndex >= batches.length) return;
-
-      const payload: UploadPayload[] = await Promise.all(
-        batches[batchIndex].map(async ({ original, preview }) => ({
-          fileName: original.name,
-          mimeType: original.type,
-          originalBase64: await toBase64(original),
-          previewBase64: await toBase64(preview),
-        })),
-      );
-
-      const response = await fetch("/api/uploads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId, files: payload }),
-      });
-      const data = (await response.json()) as { message?: string; files?: UploadedPhoto[] };
-      if (!response.ok || !data.files) {
-        throw new Error(data.message || "อัปโหลดรูปไม่สำเร็จ");
-      }
-
-      results[batchIndex] = data.files;
-      uploadedCount += payload.length;
-      onProgress?.(files.length + uploadedCount, files.length * 2);
+      const index = cursor;
+      cursor += 1;
+      if (index >= images.length) return;
+      results[index] = await uploadOne(images[index], groupId, placeName);
+      completed += 1;
+      onProgress?.(completed, images.length);
     }
   }
 
-  const workerCount = Math.min(MAX_CONCURRENT_BATCHES, batches.length);
+  const workerCount = Math.min(MAX_CONCURRENT_UPLOADS, images.length);
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  return results.flat();
+  return results;
 }
