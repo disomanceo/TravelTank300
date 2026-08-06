@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, type CSSProperties, useEffect, useRef, useState } from "react";
 import { TravelHero } from "@/components/travel-hero";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { drivePreviewUrl } from "@/lib/travel/image-url";
@@ -56,6 +56,7 @@ export default function PlaceDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
   const [deleteError, setDeleteError] = useState("");
@@ -96,19 +97,23 @@ export default function PlaceDetailPage() {
     if (!files.length || busy) return;
 
     setBusy(true);
+    setUploadProgress({ done: 0, total: files.length });
     setMessage("กำลังเตรียมรูปภาพ…");
     try {
       const placeName = place?.name?.trim() || "สถานที่";
       const uploaded = await uploadTravelPhotos(files, id, (done, total) => {
-        setMessage(`กำลังอัปโหลดรูป ${Math.round((done / total) * 100)}%`);
+        setUploadProgress({ done, total });
+        setMessage(done === total ? "กำลังบันทึกข้อมูลรูป…" : "กำลังอัปโหลดรูปภาพ…");
       }, placeName);
       await appendPlacePhotos(id, uploaded);
       await reload();
+      setUploadProgress({ done: uploaded.length, total: uploaded.length });
       setMessage(`เพิ่มรูปเรียบร้อย ${uploaded.length} รูป`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "เพิ่มรูปไม่สำเร็จ");
     } finally {
       setBusy(false);
+      window.setTimeout(() => setUploadProgress(null), 1200);
     }
   }
 
@@ -184,12 +189,8 @@ export default function PlaceDetailPage() {
                   <button
                     type="button"
                     className="detail-photo-select"
-                    aria-label={`เลือกรูปที่ ${index + 1}`}
-                    onClick={() =>
-                      setSelectedPhotoId((current) =>
-                        current === photo.id ? null : photo.id,
-                      )
-                    }
+                    aria-label={`เปิดรูปที่ ${index + 1} แบบเต็มจอ`}
+                    onClick={() => setLightboxIndex(index)}
                   >
                     {/* Drive proxy/fallback ต้องใช้ img โดยตรง */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -197,8 +198,12 @@ export default function PlaceDetailPage() {
                       src={drivePreviewUrl(
                         photo.drive_file_id,
                         photo.thumbnail_url || photo.drive_url,
+                        480,
                       )}
                       alt={`${place.name} รูปที่ ${index + 1}`}
+                      loading={index === 0 ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={index === 0 ? "high" : "auto"}
                     />
                   </button>
 
@@ -216,6 +221,23 @@ export default function PlaceDetailPage() {
                     <span className="cover-status-badge">รูปหน้าปก</span>
                   )}
 
+                  {!photo.is_cover && (
+                    <button
+                      type="button"
+                      className={`cover-choice-button${isSelected ? " active" : ""}`}
+                      aria-label={isSelected ? "ยกเลิกการเลือกรูปหน้าปก" : "เลือกรูปนี้เป็นหน้าปก"}
+                      disabled={busy}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedPhotoId((current) =>
+                          current === photo.id ? null : photo.id,
+                        );
+                      }}
+                    >
+                      ☆
+                    </button>
+                  )}
+
                   {!photo.is_cover && isSelected && (
                     <button
                       type="button"
@@ -227,14 +249,6 @@ export default function PlaceDetailPage() {
                     </button>
                   )}
 
-                  <button
-                    type="button"
-                    className="photo-view-button"
-                    aria-label={`เปิดรูปที่ ${index + 1} แบบเต็มจอ`}
-                    onClick={() => setLightboxIndex(index)}
-                  >
-                    ดูรูป
-                  </button>
                 </article>
               );
             })}
@@ -250,6 +264,25 @@ export default function PlaceDetailPage() {
               <small>{busy ? "กำลังอัปโหลด" : "เพิ่มรูป"}</small>
             </button>
           </div>
+
+          {uploadProgress && (
+            <div className="upload-gauge-panel" aria-live="polite">
+              <div
+                className="upload-gauge"
+                style={{
+                  "--upload-progress": `${Math.round((uploadProgress.done / Math.max(uploadProgress.total, 1)) * 100)}%`,
+                } as CSSProperties}
+                aria-label={`อัปโหลดแล้ว ${uploadProgress.done} จาก ${uploadProgress.total} รูป`}
+              >
+                <span>{Math.round((uploadProgress.done / Math.max(uploadProgress.total, 1)) * 100)}%</span>
+              </div>
+              <div className="upload-gauge-copy">
+                <strong>{busy ? "กำลังอัปโหลดรูปภาพ" : "อัปโหลดเสร็จแล้ว"}</strong>
+                <span>{uploadProgress.done} / {uploadProgress.total} รูป</span>
+                <small>ระบบอัปโหลดทีละรูปเพื่อลดปัญหาบนมือถือ</small>
+              </div>
+            </div>
+          )}
 
           {message && <p className="detail-photo-message">{message}</p>}
         </section>

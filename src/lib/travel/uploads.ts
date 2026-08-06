@@ -1,19 +1,14 @@
 import type { UploadedPhoto } from "@/types/travel";
 
-const PREVIEW_MAX_EDGE = 960;
-const PREVIEW_QUALITY = 0.62;
-const ORIGINAL_START_EDGE = 1900;
-const ORIGINAL_MIN_EDGE = 1300;
-const ORIGINAL_START_QUALITY = 0.78;
-const ORIGINAL_MIN_QUALITY = 0.5;
-const MAX_REQUEST_JSON_BYTES = 3_650_000;
+const PREVIEW_MAX_EDGE = 900;
+const PREVIEW_QUALITY = 0.6;
+const ORIGINAL_START_EDGE = 1700;
+const ORIGINAL_MIN_EDGE = 1100;
+const ORIGINAL_START_QUALITY = 0.74;
+const ORIGINAL_MIN_QUALITY = 0.46;
+const MAX_REQUEST_JSON_BYTES = 2_600_000;
 const MAX_CONCURRENT_UPLOADS = 1;
 const MAX_RETRIES = 3;
-
-type PreparedPhoto = {
-  original: File;
-  preview: File;
-};
 
 type UploadPayload = {
   fileName: string;
@@ -25,7 +20,18 @@ type UploadPayload = {
 type UploadApiResponse = {
   files?: UploadedPhoto[];
   message?: string;
+  retryable?: boolean;
 };
+
+class UploadRequestError extends Error {
+  retryable: boolean;
+
+  constructor(message: string, retryable: boolean) {
+    super(message);
+    this.name = "UploadRequestError";
+    this.retryable = retryable;
+  }
+}
 
 function jsonByteLength(value: unknown): number {
   return new TextEncoder().encode(JSON.stringify(value)).byteLength;
@@ -71,7 +77,7 @@ async function toBase64(file: File): Promise<string> {
   });
 }
 
-async function preparePayload(file: File, groupId: string): Promise<UploadPayload> {
+async function preparePayload(file: File, groupId: string, placeName: string): Promise<UploadPayload> {
   const preview = await canvasFile(file, PREVIEW_MAX_EDGE, PREVIEW_QUALITY, "preview");
   const previewBase64 = await toBase64(preview);
 
@@ -88,7 +94,7 @@ async function preparePayload(file: File, groupId: string): Promise<UploadPayloa
       previewBase64,
     };
 
-    const requestBody = { groupId, files: [payload] };
+    const requestBody = { groupId, placeName, files: [payload] };
     if (jsonByteLength(requestBody) <= MAX_REQUEST_JSON_BYTES) return payload;
 
     if (quality > ORIGINAL_MIN_QUALITY) {
@@ -97,11 +103,14 @@ async function preparePayload(file: File, groupId: string): Promise<UploadPayloa
     }
     if (edge > ORIGINAL_MIN_EDGE) {
       edge = Math.max(ORIGINAL_MIN_EDGE, edge - 200);
-      quality = 0.68;
+      quality = 0.62;
       continue;
     }
 
-    throw new Error("รูปภาพมีขนาดใหญ่เกินไปหลังบีบอัด กรุณาลองเลือกรูปอื่น");
+    throw new UploadRequestError(
+      "รูปภาพมีขนาดใหญ่เกินไปหลังบีบอัด กรุณาลองเลือกรูปอื่น",
+      false,
+    );
   }
 }
 
@@ -116,7 +125,7 @@ async function uploadOne(
   attempt = 1,
 ): Promise<UploadedPhoto> {
   try {
-    const payload = await preparePayload(file, groupId);
+    const payload = await preparePayload(file, groupId, placeName);
     const body = JSON.stringify({ groupId, placeName, files: [payload] });
 
     const response = await fetch("/api/uploads", {
@@ -127,12 +136,16 @@ async function uploadOne(
 
     const data = (await response.json().catch(() => ({}))) as UploadApiResponse;
     if (!response.ok || !data.files?.length) {
-      throw new Error(data.message || `อัปโหลดไม่สำเร็จ (HTTP ${response.status})`);
+      throw new UploadRequestError(
+        data.message || `อัปโหลดไม่สำเร็จ (HTTP ${response.status})`,
+        data.retryable ?? response.status >= 500,
+      );
     }
     return data.files[0];
   } catch (error) {
-    if (attempt < MAX_RETRIES) {
-      await wait(800 * attempt);
+    const retryable = error instanceof UploadRequestError ? error.retryable : true;
+    if (retryable && attempt < MAX_RETRIES) {
+      await wait(900 * attempt);
       return uploadOne(file, groupId, placeName, attempt + 1);
     }
     throw error;
@@ -151,6 +164,7 @@ export async function uploadTravelPhotos(
   const results: UploadedPhoto[] = new Array(images.length);
   let cursor = 0;
   let completed = 0;
+  onProgress?.(0, images.length);
 
   async function worker(): Promise<void> {
     while (true) {

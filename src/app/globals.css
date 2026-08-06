@@ -115,3 +115,31 @@ body{padding-bottom:0}.app-shell,main{padding-bottom:calc(82px + env(safe-area-i
 
 /* Step 30: planning list follows the compact places UI */
 .plan-place-row{min-height:116px}.plan-place-row .place-thumb{height:102px}.plan-note{color:#65736f;max-width:100%}.empty-state .primary{display:inline-flex;margin-top:10px;text-decoration:none;padding:9px 14px;border-radius:11px;background:var(--green);color:#fff;font-size:11px;font-weight:700}
+
+/* Step 31 — fast photo gallery and swipe lightbox */
+.detail-photo-select{cursor:zoom-in;touch-action:manipulation}
+.detail-photo-select img{aspect-ratio:4/3;min-height:0;background:#e5ede9}
+.photo-view-button{display:none!important}
+.cover-choice-button{position:absolute;z-index:4;left:7px;top:7px;width:31px;height:31px;border:0;border-radius:50%;display:grid;place-items:center;background:rgba(4,43,35,.72);color:#fff;font-size:20px;line-height:1;box-shadow:0 3px 10px rgba(0,0,0,.18);backdrop-filter:blur(7px)}
+.cover-choice-button.active{background:#f6b934;color:#4d3500}
+.gallery-lightbox{position:fixed;inset:0;z-index:2000;background:rgba(3,13,11,.96);display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;user-select:none}
+.lightbox-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:58px 12px 76px;touch-action:none;overscroll-behavior:contain}
+.lightbox-stage img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:4px;-webkit-user-drag:none;image-rendering:auto}
+.lightbox-close{position:fixed;right:13px;top:calc(12px + env(safe-area-inset-top));z-index:5;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:29px;line-height:1;display:grid;place-items:center;backdrop-filter:blur(8px)}
+.lightbox-arrow{position:fixed;top:50%;z-index:5;width:43px;height:54px;transform:translateY(-50%);border:0;border-radius:12px;background:rgba(255,255,255,.13);color:#fff;font-size:38px;line-height:1;display:grid;place-items:center;backdrop-filter:blur(7px)}
+.lightbox-arrow.previous{left:10px}.lightbox-arrow.next{right:10px}
+.lightbox-counter{position:fixed;left:50%;bottom:calc(33px + env(safe-area-inset-bottom));z-index:5;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.58);color:#fff;font-size:12px;font-weight:700}
+.lightbox-swipe-hint{position:fixed;left:0;right:0;bottom:calc(9px + env(safe-area-inset-bottom));margin:0;text-align:center;color:rgba(255,255,255,.65);font-size:9px;pointer-events:none}
+.gallery-lightbox .lightbox-loading{background:transparent;color:#fff;font-size:11px}
+@media(max-width:699px){.lightbox-arrow{display:none}.lightbox-stage{padding-left:0;padding-right:0}.lightbox-stage img{border-radius:0}.detail-photo-grid{gap:7px}}
+
+/* Step 32: upload gauge under the photo frame */
+.upload-gauge-panel{display:flex;align-items:center;gap:13px;margin-top:12px;padding:11px 12px;border:1px solid #d8e8e2;border-radius:14px;background:linear-gradient(135deg,#f7fbf9,#eef8f4)}
+.upload-gauge{--upload-progress:0%;width:64px;height:64px;flex:0 0 64px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(#07846d var(--upload-progress),#dce9e4 0);box-shadow:0 5px 14px rgba(7,115,95,.13)}
+.upload-gauge::before{content:"";position:absolute;inset:7px;border-radius:50%;background:#fff}
+.upload-gauge span{position:relative;z-index:1;color:#075f50;font-size:14px;font-weight:800}
+.upload-gauge-copy{display:flex;min-width:0;flex-direction:column;gap:2px}
+.upload-gauge-copy strong{font-size:12px;color:#1d3f37}
+.upload-gauge-copy span{font-size:13px;font-weight:800;color:#07846d}
+.upload-gauge-copy small{font-size:9px;line-height:1.4;color:#71817c}
+@media(max-width:360px){.upload-gauge-panel{gap:10px;padding:10px}.upload-gauge{width:56px;height:56px;flex-basis:56px}.upload-gauge::before{inset:6px}}

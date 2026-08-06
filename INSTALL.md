@@ -19,3 +19,9 @@ npm.cmd run dev
 
 ## Step 29.1
 ZIP วางไฟล์ไว้ระดับราก ให้ใช้คำสั่งค้นหา ZIP อัตโนมัติจาก Downloads เพื่อหลีกเลี่ยงปัญหาชื่อไฟล์หรือพาธไม่ตรง
+
+## ตรวจ Step 31
+หลังติดตั้ง ให้เปิดสถานที่ที่มีหลายรูป กดที่ตัวรูปโดยตรงและปัดซ้าย–ขวา ภาพในกริดควรโหลดเป็นภาพย่อ ส่วน Lightbox โหลด Preview ความละเอียดสูงโดยไม่ต้องมีปุ่ม `ดูรูป`
+
+## Step 32 — ตรวจ GAS ก่อนทดสอบรูป
+เปิดค่า `GAS_WEB_APP_URL` ใน Browser ต้องได้ JSON จาก `doGet()` และ URL ต้องลงท้าย `/exec` หากได้หน้า HTML หรือ HTTP 404 ให้ Deploy Apps Script แบบ New version และนำ URL `/exec` ใหม่มาใส่ `.env.local` และ Vercel แล้ว restart `npm.cmd run dev`.

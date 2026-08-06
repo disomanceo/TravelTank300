@@ -1,6 +1,6 @@
-/** TravelTank300 GAS upload service — Step 28 */
+/** TravelTank300 GAS upload service — Step 32 */
 function doGet() {
-  return jsonResponse_({ success: true, service: 'TravelTank300 Upload', version: '1.5.0' });
+  return jsonResponse_({ success: true, service: 'TravelTank300 Upload', version: '1.6.0' });
 }
 
 function doPost(e) {

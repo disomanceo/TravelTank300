@@ -1,2 +1,97 @@
-"use client";import{useState}from"react";import{useRouter}from"next/navigation";import{TravelHero}from"@/components/travel-hero";import{PlaceForm}from"@/components/place-form";import{PhotoPicker,type PhotoItem}from"@/components/photo-picker";import{appendPlacePhotos,createPlace}from"@/lib/travel/repository";import{uploadTravelPhotos}from"@/lib/travel/uploads";
-export default function New(){const r=useRouter();const[photos,setPhotos]=useState<PhotoItem[]>([]),[cover,setCover]=useState<string|null>(null),[saving,setSaving]=useState(false),[status,setStatus]=useState("");return <main><TravelHero title="เพิ่มสถานที่" subtitle="บันทึกข้อมูลก่อน แล้วอัปโหลดรูปต่ออย่างรวดเร็ว" backHref="/places"/><section className="content"><section className="card"><h2>รูปภาพ</h2><PhotoPicker photos={photos} coverId={cover} onPhotos={setPhotos} onCover={setCover}/>{status&&<p className="hint">{status}</p>}</section><PlaceForm saving={saving} onSave={async data=>{setSaving(true);try{setStatus("กำลังบันทึกข้อมูลสถานที่…");const id=await createPlace(data);r.push(`/places/${id}?saved=1`);if(photos.length){const ordered=[...photos].sort((a,b)=>a.id===cover?-1:b.id===cover?1:0);setStatus("ข้อมูลบันทึกแล้ว กำลังอัปโหลดรูป…");const up=await uploadTravelPhotos(ordered.map(x=>x.file),id,(d,t)=>setStatus(`กำลังอัปโหลดรูป ${Math.round(d/t*100)}%`),data.name);await appendPlacePhotos(id,up)}}finally{setSaving(false)}}}/></section></main>}
+"use client";
+
+import { type CSSProperties, useState } from "react";
+import { useRouter } from "next/navigation";
+import { TravelHero } from "@/components/travel-hero";
+import { PlaceForm } from "@/components/place-form";
+import { PhotoPicker, type PhotoItem } from "@/components/photo-picker";
+import { appendPlacePhotos, createPlace } from "@/lib/travel/repository";
+import { uploadTravelPhotos } from "@/lib/travel/uploads";
+
+export default function NewPlacePage() {
+  const router = useRouter();
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [coverId, setCoverId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+
+  return (
+    <main>
+      <TravelHero
+        title="เพิ่มสถานที่"
+        subtitle="บันทึกข้อมูลและอัปโหลดรูปอย่างเป็นลำดับ"
+        backHref="/places"
+      />
+      <section className="content">
+        <section className="card">
+          <h2>รูปภาพ</h2>
+          <PhotoPicker
+            photos={photos}
+            coverId={coverId}
+            onPhotos={setPhotos}
+            onCover={setCoverId}
+          />
+
+          {uploadProgress && (
+            <div className="upload-gauge-panel" aria-live="polite">
+              <div
+                className="upload-gauge"
+                style={{
+                  "--upload-progress": `${Math.round((uploadProgress.done / Math.max(uploadProgress.total, 1)) * 100)}%`,
+                } as CSSProperties}
+                aria-label={`อัปโหลดแล้ว ${uploadProgress.done} จาก ${uploadProgress.total} รูป`}
+              >
+                <span>
+                  {Math.round((uploadProgress.done / Math.max(uploadProgress.total, 1)) * 100)}%
+                </span>
+              </div>
+              <div className="upload-gauge-copy">
+                <strong>{saving ? "กำลังอัปโหลดรูปภาพ" : "อัปโหลดเสร็จแล้ว"}</strong>
+                <span>{uploadProgress.done} / {uploadProgress.total} รูป</span>
+                <small>แต่ละรูปจะถูกลดขนาดและส่งทีละรูป</small>
+              </div>
+            </div>
+          )}
+
+          {status && <p className="hint">{status}</p>}
+        </section>
+
+        <PlaceForm
+          saving={saving}
+          onSave={async (data) => {
+            setSaving(true);
+            setStatus("กำลังบันทึกข้อมูลสถานที่…");
+            try {
+              const placeId = await createPlace(data);
+
+              if (photos.length) {
+                const ordered = [...photos].sort((a, b) =>
+                  a.id === coverId ? -1 : b.id === coverId ? 1 : 0,
+                );
+                setUploadProgress({ done: 0, total: ordered.length });
+                setStatus("บันทึกข้อมูลแล้ว กำลังเตรียมรูปภาพ…");
+
+                const uploaded = await uploadTravelPhotos(
+                  ordered.map((photo) => photo.file),
+                  placeId,
+                  (done, total) => {
+                    setUploadProgress({ done, total });
+                    setStatus(done === total ? "กำลังบันทึกข้อมูลรูป…" : "กำลังอัปโหลดรูปภาพ…");
+                  },
+                  data.name,
+                );
+                await appendPlacePhotos(placeId, uploaded);
+              }
+
+              router.push(`/places/${placeId}?saved=1`);
+            } catch (error) {
+              setStatus(error instanceof Error ? error.message : "บันทึกข้อมูลไม่สำเร็จ");
+              setSaving(false);
+            }
+          }}
+        />
+      </section>
+    </main>
+  );
+}
