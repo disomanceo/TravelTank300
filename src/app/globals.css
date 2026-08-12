@@ -143,3 +143,12 @@ body{padding-bottom:0}.app-shell,main{padding-bottom:calc(82px + env(safe-area-i
 .upload-gauge-copy span{font-size:13px;font-weight:800;color:#07846d}
 .upload-gauge-copy small{font-size:9px;line-height:1.4;color:#71817c}
 @media(max-width:360px){.upload-gauge-panel{gap:10px;padding:10px}.upload-gauge{width:56px;height:56px;flex-basis:56px}.upload-gauge::before{inset:6px}}
+
+
+/* Step 33 — visual rating stars on the place detail page */
+.detail-rating-row{display:flex;align-items:center;gap:8px;margin:9px 0;color:#72500a}
+.detail-rating-row strong{font-size:12px;font-weight:700;white-space:nowrap}
+.detail-rating-stars{display:inline-flex;align-items:center;gap:2px;line-height:1}
+.detail-rating-star{position:relative;display:inline-block;width:19px;height:20px;font-size:20px;line-height:20px}
+.detail-rating-star-empty{position:absolute;inset:0;color:#d8dfdc}
+.detail-rating-star-fill{position:absolute;inset:0 auto 0 0;overflow:hidden;color:#f3a51f;white-space:nowrap}

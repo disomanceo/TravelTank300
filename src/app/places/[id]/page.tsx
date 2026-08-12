@@ -46,6 +46,27 @@ function PlusIcon() {
   );
 }
 
+function RatingStars({ rating }: { rating: number }) {
+  const normalizedRating = Math.min(5, Math.max(0, rating));
+
+  return (
+    <span
+      className="detail-rating-stars"
+      aria-label={`คะแนน ${normalizedRating.toFixed(1)} จาก 5.0 ดาว`}
+    >
+      {[0, 1, 2, 3, 4].map((index) => {
+        const fill = Math.min(1, Math.max(0, normalizedRating - index)) * 100;
+        return (
+          <span className="detail-rating-star" aria-hidden="true" key={index}>
+            <span className="detail-rating-star-empty">★</span>
+            <span className="detail-rating-star-fill" style={{ width: `${fill}%` }}>★</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export default function PlaceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -299,7 +320,10 @@ export default function PlaceDetailPage() {
             </Link>
           </div>
           <p>{place.note || "ยังไม่มีรายละเอียด"}</p>
-          <p>★ {(place.rating || 0).toFixed(1)} / 5</p>
+          <p className="detail-rating-row">
+            <RatingStars rating={place.rating || 0} />
+            <strong>{(place.rating || 0).toFixed(1)} / 5.0</strong>
+          </p>
           <p>
             {[place.subdistrict, place.district, place.province]
               .filter(Boolean)
