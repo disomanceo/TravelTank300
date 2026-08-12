@@ -171,3 +171,9 @@ body{padding-bottom:0}.app-shell,main{padding-bottom:calc(82px + env(safe-area-i
 .map-link-panel p{grid-column:1/-1;margin:0;font-size:9px;line-height:1.5}
 .map-link-warning{color:#9a4c15}.map-link-success{color:#08735f;font-weight:700}
 @media(max-width:380px){.map-link-panel{grid-template-columns:1fr}.map-link-panel>button{width:100%}}
+
+
+/* Step 36 — free street and satellite map switcher */
+.map-type-switch{position:absolute;top:9px;right:9px;z-index:4;display:flex;padding:3px;border:1px solid rgba(22,54,47,.18);border-radius:10px;background:rgba(255,255,255,.94);box-shadow:0 4px 13px rgba(22,54,47,.16);backdrop-filter:blur(8px)}
+.map-type-switch button{min-height:32px;border:0;border-radius:7px;padding:0 10px;background:transparent;color:#52645f;font-size:10px;font-weight:700}
+.map-type-switch button.active{background:#08735f;color:#fff;box-shadow:0 2px 7px rgba(8,115,95,.24)}
