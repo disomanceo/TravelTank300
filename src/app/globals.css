@@ -161,3 +161,13 @@ body{padding-bottom:0}.app-shell,main{padding-bottom:calc(82px + env(safe-area-i
 .map-error-panel button{flex:0 0 auto;border:0;border-radius:8px;padding:7px 10px;background:#a43b32;color:#fff;font-size:10px;font-weight:700}
 .search-results button:hover,.search-results button:focus-visible{background:#f0f8f5;outline:none}
 .search-results strong{color:#183d34}
+
+
+/* Step 35 — import coordinates from a Google Maps link */
+.map-link-panel{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:end;margin:10px 0;padding:10px;border:1px solid #d8e6e1;border-radius:12px;background:#f7fbf9}
+.map-link-panel label{min-width:0}
+.map-link-panel input{height:42px;margin-top:5px;font-size:10px}
+.map-link-panel>button{height:42px;border:0;border-radius:10px;padding:0 11px;background:#08735f;color:#fff;font-size:10px;font-weight:700;white-space:nowrap}
+.map-link-panel p{grid-column:1/-1;margin:0;font-size:9px;line-height:1.5}
+.map-link-warning{color:#9a4c15}.map-link-success{color:#08735f;font-weight:700}
+@media(max-width:380px){.map-link-panel{grid-template-columns:1fr}.map-link-panel>button{width:100%}}
