@@ -108,7 +108,7 @@ export default function PlansPage() {
             {shown.map((plan) => {
               const state = planState(plan);
               return (
-                <Link className="place-row plan-place-row" href={`/plans?selected=${plan.id}`} key={plan.id}>
+                <Link className="place-row plan-place-row" href={`/plans/${plan.id}`} key={plan.id}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     className="place-thumb"

@@ -70,6 +70,8 @@ export type TravelPlanRow = {
   created_at: string;
 };
 
+export type TravelPlanPhotoRow = TravelPhotoRow & { plan_id?: string };
+
 type PlanPhotoCoverRow = {
   plan_id: string;
   drive_file_id: string | null;
@@ -400,4 +402,78 @@ export async function listPlans(): Promise<TravelPlanRow[]> {
       photo_count: photos.length,
     };
   });
+}
+
+
+export async function getPlanById(id: string) {
+  const { data, error } = await db().from("travel_plans").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as TravelPlanRow | null;
+}
+
+export async function listPlanPhotos(id: string): Promise<TravelPlanPhotoRow[]> {
+  const { data, error } = await db()
+    .from("travel_plan_photos")
+    .select("id,plan_id,drive_file_id,drive_url,thumbnail_url,file_name,mime_type,sort_order,is_cover")
+    .eq("plan_id", id)
+    .order("sort_order");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TravelPlanPhotoRow[];
+}
+
+export async function appendPlanPhotos(planId: string, photos: UploadedPhoto[]) {
+  if (!photos.length) return;
+  const supabase = db();
+  const existing = await listPlanPhotos(planId);
+  const start = existing.length;
+  const rows = photos.map((photo, index) => ({
+    plan_id: planId,
+    drive_file_id: photo.driveFileId,
+    drive_url: photo.driveUrl,
+    thumbnail_url: photo.thumbnailUrl,
+    file_name: photo.fileName,
+    mime_type: photo.mimeType,
+    sort_order: start + index,
+    is_cover: start === 0 && index === 0,
+  }));
+  const { error } = await supabase.from("travel_plan_photos").insert(rows);
+  if (error) throw new Error(error.message);
+  const patch: Record<string, unknown> = { photo_count: start + photos.length };
+  if (start === 0) {
+    patch.cover_image_url = rows[0].thumbnail_url || rows[0].drive_url;
+    patch.cover_drive_file_id = rows[0].drive_file_id;
+  }
+  const { error: planError } = await supabase.from("travel_plans").update(patch).eq("id", planId);
+  if (planError) throw new Error(planError.message);
+}
+
+export async function setPlanCoverPhoto(planId: string, photo: TravelPlanPhotoRow) {
+  const supabase = db();
+  const { error: clearError } = await supabase.from("travel_plan_photos").update({ is_cover: false }).eq("plan_id", planId);
+  if (clearError) throw new Error(clearError.message);
+  const { error } = await supabase.from("travel_plan_photos").update({ is_cover: true }).eq("id", photo.id).eq("plan_id", planId);
+  if (error) throw new Error(error.message);
+  const { error: planError } = await supabase.from("travel_plans").update({
+    cover_image_url: photo.thumbnail_url || photo.drive_url,
+    cover_drive_file_id: photo.drive_file_id,
+  }).eq("id", planId);
+  if (planError) throw new Error(planError.message);
+}
+
+export async function deletePlanPhoto(planId: string, photo: TravelPlanPhotoRow) {
+  const supabase = db();
+  const { error } = await supabase.from("travel_plan_photos").delete().eq("id", photo.id).eq("plan_id", planId);
+  if (error) throw new Error(error.message);
+  try {
+    if (photo.drive_file_id) await fetch("/api/uploads", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileId: photo.drive_file_id }) });
+  } catch {}
+  const remaining = await listPlanPhotos(planId);
+  let cover = remaining.find((item) => item.is_cover) || remaining[0];
+  if (cover && !cover.is_cover) await setPlanCoverPhoto(planId, cover);
+  const { error: planError } = await supabase.from("travel_plans").update(cover ? {
+    photo_count: remaining.length,
+    cover_image_url: cover.thumbnail_url || cover.drive_url,
+    cover_drive_file_id: cover.drive_file_id,
+  } : { photo_count: 0, cover_image_url: null, cover_drive_file_id: null }).eq("id", planId);
+  if (planError) throw new Error(planError.message);
 }
