@@ -462,8 +462,15 @@ export async function setPlanCoverPhoto(planId: string, photo: TravelPlanPhotoRo
 
 export async function deletePlanPhoto(planId: string, photo: TravelPlanPhotoRow) {
   const supabase = db();
-  const { error } = await supabase.from("travel_plan_photos").delete().eq("id", photo.id).eq("plan_id", planId);
-  if (error) throw new Error(error.message);
+  const { data: deleted, error } = await supabase
+    .from("travel_plan_photos")
+    .delete()
+    .eq("id", photo.id)
+    .eq("plan_id", planId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(`ลบรูปจากฐานข้อมูลไม่สำเร็จ: ${error.message}`);
+  if (!deleted) throw new Error("ฐานข้อมูลไม่อนุญาตให้ลบรูป กรุณาตรวจ Delete Policy ของ travel_plan_photos");
   try {
     if (photo.drive_file_id) await fetch("/api/uploads", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileId: photo.drive_file_id }) });
   } catch {}
