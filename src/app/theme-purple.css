@@ -1,0 +1,18 @@
+/* Purple theme override */
+:root{--green:#7c3aed;--green-dark:#5b21b6;--teal:#8b5cf6;--ink:#2b2140;--muted:#756d82;--line:#e8e0f2;--bg:#f8f5fc}
+html,body{background:#f1ecf7;color:var(--ink)}
+.app-shell{background:var(--bg)}
+.travel-hero{color:#3b176f;background:#c9b6df}
+.hero-brand,.hero-actions button,.hero-round-button{color:#5b21b6}
+.hero-avatar{background:#eadcff;color:#4c1d95}
+.tabs button.active,.nav-item.active{color:var(--green);border-bottom-color:var(--green)}
+.fab{background:linear-gradient(145deg,#8b5cf6,#6d28d9);box-shadow:0 8px 20px rgba(109,40,217,.30)}
+.form-step,.empty-state-icon,.edit-pencil-button{background:#efe7fb;color:var(--green)}
+input:focus,select:focus,textarea:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(124,58,237,.10)}
+.secondary{background:#efe7fb;color:#5b21b6}
+.primary,.map-link-panel>button,.map-type-switch button.active{background:var(--green);color:#fff}
+.sticky-submit button{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.add-photo-tile{border-color:#bca7df;background:#f5f0fb;color:var(--green)}
+.add-photo-tile span{background:var(--green)}
+.upload-gauge{background:conic-gradient(#7c3aed var(--upload-progress),#e3daec 0)}
+.upload-gauge span,.upload-gauge-copy span,.map-link-success{color:#6d28d9}
